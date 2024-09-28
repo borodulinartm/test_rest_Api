@@ -1,7 +1,6 @@
 package org.example.test_rest_api;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.test_rest_api.model.TestTable;
 import org.example.test_rest_api.model.TestTableRequest;
 import org.example.test_rest_api.service.impl.TestTableService;
 import org.junit.jupiter.api.DisplayName;
@@ -33,9 +32,8 @@ public class TestGettingData {
     private static final int SIZE_DATA = COUNT_ELEMS / COUNT_CONNECTIONS;
     private static final int COUNT_ROUNDS = 20;
 
-    @Test
-    @Order(1)
-    public void generateData() {
+    // Метод генерирует данные
+    private void generateLargeData() {
         for (int i = 0; i < COUNT_ELEMS; i++) {
             TestTableRequest request = TestTableRequest
                     .builder()
@@ -43,8 +41,8 @@ public class TestGettingData {
                     .description("Test description #" + i)
                     .build();
 
-            TestTable createdTable = testTableService.createRecord(request);
-            assertThat(createdTable).isNotNull();
+            testTableService.createRecord(request);
+            assertThat(request).isNotNull();
         }
     }
 
@@ -52,6 +50,8 @@ public class TestGettingData {
     @Order(2)
     @Commit
     public void calculateTask() {
+        generateLargeData();
+
         Callable<Boolean> callFunction = () -> {
             testTableService.getRandomRecords(SIZE_DATA);
             return true;
@@ -59,6 +59,8 @@ public class TestGettingData {
 
         List<Callable<Boolean>> dataSet = new ArrayList<>(Collections.nCopies(COUNT_CONNECTIONS, callFunction));
         List<Long> timeExecutions = new ArrayList<>(COUNT_ROUNDS);
+
+        long elapsedTime = 0L;
 
         // Количество раундов
         for (int i = 0; i < COUNT_ROUNDS; i++) {
@@ -74,6 +76,9 @@ public class TestGettingData {
                 }
 
                 long endTime = System.currentTimeMillis();
+                if (elapsedTime == 0L)
+                    elapsedTime = endTime - startTime;
+
                 timeExecutions.add(endTime - startTime);
             } catch (InterruptedException | ExecutionException exception) {
                 throw new RuntimeException(exception);
@@ -82,7 +87,7 @@ public class TestGettingData {
 
         Collections.sort(timeExecutions);
 
-        System.out.println("Время выполнения (мс): " + timeExecutions.get(1));
+        System.out.println("Время выполнения (мс): " + elapsedTime);
         System.out.println("Медиана (мс): " + calculateMedian(timeExecutions));
         System.out.println("95 процентиль (мс): " + calculatePercentile(timeExecutions, 95));
         System.out.println("99 процентиль (мс): " + calculatePercentile(timeExecutions, 99));
@@ -91,8 +96,8 @@ public class TestGettingData {
     // Метод рассчитывает медиану
     private double calculateMedian(List<Long> timeExecutions) {
         if (timeExecutions.size() % 2 == 0) {
-            return (double)(timeExecutions.get(timeExecutions.size() / 2)
-                    + timeExecutions.get(timeExecutions.size() / 2 - 1));
+            return (double)((timeExecutions.get(timeExecutions.size() / 2)
+                    + timeExecutions.get(timeExecutions.size() / 2 - 1))) / 2;
         } else {
             return (double) (timeExecutions.get(timeExecutions.size() / 2));
         }

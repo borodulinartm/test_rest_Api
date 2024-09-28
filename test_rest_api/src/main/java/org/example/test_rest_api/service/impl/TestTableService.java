@@ -1,5 +1,6 @@
 package org.example.test_rest_api.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.test_rest_api.model.TestTable;
 import org.example.test_rest_api.model.TestTableRequest;
