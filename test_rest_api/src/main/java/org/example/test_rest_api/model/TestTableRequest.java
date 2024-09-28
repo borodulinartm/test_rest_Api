@@ -1,15 +1,13 @@
 package org.example.test_rest_api.model;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class TestTableRequest {
     @NotEmpty(message = "name cannot be empty")
     private String name;

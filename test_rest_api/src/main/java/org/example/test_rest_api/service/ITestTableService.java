@@ -9,7 +9,8 @@ import java.util.Optional;
 public interface ITestTableService {
     List<TestTable> getAllRecords();
     Optional<TestTable> getRecordById(Long id);
-    void createRecord(TestTableRequest request);
-    void updateRecord(Long id, TestTableRequest request);
-    boolean deleteRecordById(Long id);
+    TestTable createRecord(TestTableRequest request);
+    TestTable updateRecord(Long id, TestTableRequest request);
+    void deleteRecordById(Long id);
+    List<TestTable> getRandomRecords(int countElems);
 }

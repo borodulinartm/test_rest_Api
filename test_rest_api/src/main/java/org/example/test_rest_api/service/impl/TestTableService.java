@@ -26,17 +26,17 @@ public class TestTableService implements ITestTableService {
     }
 
     @Override
-    public void createRecord(TestTableRequest request) {
+    public TestTable createRecord(TestTableRequest request) {
         TestTable newData = TestTable
                 .builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .build();
-        tableRepository.save(newData);
+        return tableRepository.save(newData);
     }
 
     @Override
-    public void updateRecord(Long id, TestTableRequest request) {
+    public TestTable updateRecord(Long id, TestTableRequest request) {
         Optional<TestTable> curValue = getRecordById(id);
         if (curValue.isPresent()) {
             TestTable val = curValue.get();
@@ -44,13 +44,19 @@ public class TestTableService implements ITestTableService {
             val.setName(request.getName());
             val.setDescription(request.getDescription());
 
-            tableRepository.save(val);
+            return tableRepository.save(val);
         }
+
+        return null;
     }
 
     @Override
-    public boolean deleteRecordById(Long id) {
+    public void deleteRecordById(Long id) {
         tableRepository.deleteById(id);
-        return true;
+    }
+
+    @Override
+    public List<TestTable> getRandomRecords(int countElems) {
+        return tableRepository.getRandomElements(countElems);
     }
 }
