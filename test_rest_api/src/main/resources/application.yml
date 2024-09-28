@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: test_rest_api
+  main:
+    banner-mode: off
+
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/test
+    username: sa
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
