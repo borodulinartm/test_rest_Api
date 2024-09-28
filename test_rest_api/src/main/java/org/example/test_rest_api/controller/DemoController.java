@@ -5,41 +5,62 @@ import org.example.test_rest_api.model.TestTable;
 import org.example.test_rest_api.model.TestTableRequest;
 import org.example.test_rest_api.service.impl.TestTableService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(value = "/test/demo", produces = "application/json", consumes = "application/json")
+@RequestMapping(value = "/test/demo")
 public class DemoController {
     private final TestTableService testTableService;
 
+    /**
+     * Список всех записей
+     * @return массив найденных записей
+     */
     @GetMapping("/all")
     public ResponseEntity<List<TestTable>> getAllRecords() {
-        return ResponseEntity.of(Optional.of(testTableService.getAllRecords()));
+        return ResponseEntity.ok(testTableService.getAllRecords());
     }
 
+    /**
+     * Поиск по id
+     * @param id идентификатор элемента
+     * @return конечный объект ({@code TestTable})
+     */
     @GetMapping("/{id}")
     public ResponseEntity<TestTable> getRecordById(@PathVariable Long id) {
         return ResponseEntity.of(testTableService.getRecordById(id));
     }
 
-    // ID передавать не нужно. Поэтому был создан отдельный класс, где всего этого нет
-    @PostMapping("/create")
+    /**
+     * Создаёт новую запись
+     * @param request содержимое нового запроса
+     */
+    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public void createRecord(@RequestBody TestTableRequest request) {
         testTableService.createRecord(request);
     }
 
-    @PutMapping("/update/{id}")
+    /**
+     * Обновление записи по id
+     * @param id идентификатор записи
+     * @param request запрос на создание элемента
+     */
+    @PutMapping(value = "/update/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void putRecord(@PathVariable Long id, @RequestBody TestTableRequest request) {
         testTableService.updateRecord(id, request);
     }
 
+    /**
+     * Удаление записи
+     * @param id идентификатор записи
+     */
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRecord(@PathVariable Long id) {

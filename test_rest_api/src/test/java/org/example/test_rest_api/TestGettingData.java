@@ -1,8 +1,7 @@
 package org.example.test_rest_api;
 
-import lombok.extern.slf4j.Slf4j;
-import org.example.test_rest_api.model.TestTableRequest;
-import org.example.test_rest_api.service.impl.TestTableService;
+import org.example.test_rest_api.model.TestTable;
+import org.example.test_rest_api.repository.TestTableRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -13,56 +12,70 @@ import org.springframework.test.annotation.Commit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @DisplayName("Тест №2: Выборка 1 млн. произвольных записей через 100 подключений")
-@Slf4j
 public class TestGettingData {
     @Autowired
-    private TestTableService testTableService;
+    private TestTableRepository testTableRepository;
 
     private static final int COUNT_ELEMS = 1_000_000;
     private static final int COUNT_CONNECTIONS = 100;
     private static final int SIZE_DATA = COUNT_ELEMS / COUNT_CONNECTIONS;
     private static final int COUNT_ROUNDS = 20;
 
-    // Метод генерирует данные
+    /**
+     * Метод генерирует данные в таблицу (1М записей)
+     */
     private void generateLargeData() {
+        // Если что-либо есть в базе данных, очищаем
+        testTableRepository.deleteAll();
         for (int i = 0; i < COUNT_ELEMS; i++) {
-            TestTableRequest request = TestTableRequest
+            TestTable request = TestTable
                     .builder()
+                    .id((long) (i + 1))
                     .name("Test name #" + i)
                     .description("Test description #" + i)
                     .build();
 
-            testTableService.createRecord(request);
+            testTableRepository.save(request);
             assertThat(request).isNotNull();
         }
     }
 
+    /**
+     * Основной метод теста
+     */
     @Test
-    @Order(2)
+    @Order(1)
     @Commit
     public void calculateTask() {
         generateLargeData();
 
+        // В качестве подключения используется многопоточка с указанным количетсвом потоков (по условию, 100)
         Callable<Boolean> callFunction = () -> {
-            testTableService.getRandomRecords(SIZE_DATA);
+            Iterable<Long> randomElems = LongStream.generate(() -> new Random().nextLong(COUNT_ELEMS))
+                    .limit(SIZE_DATA).boxed().toList();
+            testTableRepository.getByIdIn(randomElems);
             return true;
         };
 
+        // Массив результатов обработки
         List<Callable<Boolean>> dataSet = new ArrayList<>(Collections.nCopies(COUNT_CONNECTIONS, callFunction));
         List<Long> timeExecutions = new ArrayList<>(COUNT_ROUNDS);
 
+        // Используется для расчёта обычного времени
         long elapsedTime = 0L;
 
-        // Количество раундов
+        // Количество раундов (для расчёта медианы и процентилей)
         for (int i = 0; i < COUNT_ROUNDS; i++) {
             try {
                 var service = Executors.newFixedThreadPool(COUNT_CONNECTIONS);
@@ -93,7 +106,11 @@ public class TestGettingData {
         System.out.println("99 процентиль (мс): " + calculatePercentile(timeExecutions, 99));
     }
 
-    // Метод рассчитывает медиану
+    /**
+     * Метод рассчитывает медиану
+     * @param timeExecutions массив медиан
+     * @return медианное значение
+     */
     private double calculateMedian(List<Long> timeExecutions) {
         if (timeExecutions.size() % 2 == 0) {
             return (double)((timeExecutions.get(timeExecutions.size() / 2)
@@ -103,7 +120,12 @@ public class TestGettingData {
         }
     }
 
-    // Метод рассчитывает процентиль
+    /**
+     * Метод рассчитывает процентиль
+     * @param timeExecutions массив показателей
+     * @param percentile процентиль
+     * @return рассчитанное значение
+     */
     private double calculatePercentile(List<Long> timeExecutions, double percentile) {
         int indexToReturn = (int) Math.ceil(percentile / 100 * timeExecutions.size());
         return timeExecutions.get(indexToReturn - 1);

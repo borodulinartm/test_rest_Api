@@ -1,6 +1,5 @@
 package org.example.test_rest_api.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.test_rest_api.model.TestTable;
 import org.example.test_rest_api.model.TestTableRequest;
@@ -57,7 +56,7 @@ public class TestTableService implements ITestTableService {
     }
 
     @Override
-    public List<TestTable> getRandomRecords(int countElems) {
-        return tableRepository.getRandomElements(countElems);
+    public List<TestTable> getRandomRecords(Iterable<Long> elems) {
+        return tableRepository.getByIdIn(elems);
     }
 }
